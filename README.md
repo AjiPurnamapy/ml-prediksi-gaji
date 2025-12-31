@@ -1,18 +1,18 @@
-    import numpy as np     # standart industri untuk manipulasi array numerik yang efisien
-    from sklearn.linear_model import LinearRegression  # algoritma linear regressiondari scikit-lear
-    import joblib   # library standar untuk menyimpan (serialize) objek python/model ke file
+    import numpy as np                                  # standart industri untuk manipulasi array numerik yang efisien
+    from sklearn.linear_model import LinearRegression   # algoritma linear regressiondari scikit-lear
+    import joblib                                       # library standar untuk menyimpan (serialize) objek python/model ke file
 
     def main():
     # persiapan data (dummy)
     # di proyek nyata, data ini diambil dari database (postgresql) atau via pandas
     # X = fitur (inpput), y = target (output)
 
-    # X train: tahun pengalaman
+    # X_train: tahun pengalaman
     # menggunakan numpy array karena scikit-lear bekerja lebih cepat dengan format ini
     # .reshape(-1, 1) PENTING: scikit-learn mengharuskan input fitur berbentuk 2D array (Baris, Kolom)
     # -1 artinya "Biarkan numpy hitung jumlah barisnya", 1 artinya "harus 1 kolom"
-    X_train = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).reshape(-1, 1)         # .reshape() akan membuat data menurun ke bawah
-    # X_train = np.array([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12]])  # ATAUPUN BISA TANPA MENGGUNAKAN .reshape(-1, 1)
+    X_train = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).reshape(-1, 1)             # .reshape() akan membuat data menurun ke bawah
+    X_train = np.array([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12]])    # ATAUPUN BISA TANPA MENGGUNAKAN .reshape(-1, 1)  # tinggal pilih ingin menggunakan yg mana
 
     # y_train: gaji (dalam jutaan/ribuan/ratusan).
     # target biasanya berbentuk 1D array (vektor), jadi tidak perlu reshape
@@ -51,10 +51,10 @@
     if __name__ == "__main__":
         main()
 
-DATA .reshape() akan terlihat seperti ini, data X_train harus berbentuk kolom, kenapa y_train tidak? karena itu hanya berisi deretan angka jawaban.
+DATA .reshape() akan terlihat seperti ini, data X_train harus berbentuk kolom yang menurun kebawah, kenapa y_train tidak? karena itu hanya berisi deretan angka jawaban dan tidak harus juga menurun kebawah.
 [
  [1],
- [2],
+ [2], 
  [3],
  [4],
  [5],
