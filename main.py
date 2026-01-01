@@ -45,21 +45,21 @@ def read_root():
 
 @app.post("/predict", response_model=SalaryOutput)
 def predict_salary(data: SalaryInput):
-    if "gaji_model"not in ml_models or ml_models["gaji_model" is None]:
+    if "gaji_model"not in ml_models or ml_models["gaji_model"] is None:
         logger.critical("Model hilang dari memori runtime!")
         raise HTTPException(status_code=500, detail="Model machine learning tidak aktif")
     try:
-        years = data.years_experience
-        input_data = np.array([[years]])
+        years_list = data.years_experience
+        input_data = np.array([[years_list]]).reshape(-1, 1)
         prediction = ml_models["gaji_model"].predict(input_data)
-        result_salary = prediction[0]
+        result_list = [round(float(x), 2) for x in prediction]
 
-        logger.info(f"Prediksi: {years} Tahun -> {result_salary:.2f} Juta")
+        logger.info(f"Batch Prediksi: {len(years_list)} data diproses")
 
         return {
-            "input_years": years,
-            "estimated_salary_million":round(result_salary, 2),
-            "message": "Prediksi berhasil dihitung menggunakan linear regression"
+            "input_years": years_list,
+            "estimated_salary_million":result_list,
+            "message": f"Berhasil memprediksi {len(years_list)} data sekaligus!"
         }
     except Exception as e:
         logger.error(f"Error saat prediksi: {e}")

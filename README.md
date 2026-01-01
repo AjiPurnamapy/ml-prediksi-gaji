@@ -84,8 +84,7 @@ DATA .reshape() akan terlihat seperti ini, data X_train harus berbentuk kolom ya
     
     # --- FASE 2: SHUTDOWN (Saat Server Dimatikan) ---
     ml_models.clear() # Bersih-bersih RAM
-@asynccontextmanager: Decorator yang mengubah fungsi biasa menjadi manajer konteks (punya awal dan akhir).
-yield: Ini adalah tombol "Pause". Kode akan berhenti di baris yield selama server menyala
+
     # Defensive Programming: Cek apakah model ada di rak?
     try:
         years = data.years_experience       # 1. Ambil angka (misal: 3.5)
