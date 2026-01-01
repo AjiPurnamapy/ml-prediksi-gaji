@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import Optional
 
 class SalaryInput(BaseModel):
-    years_experience: float
+    years_experience: float = Field(gt=0, le=50, description="Pengalaman kerja dalam tahun")
 
 class SalaryOutput(BaseModel):
     input_years: float

@@ -23,7 +23,10 @@ async def lifespan(app: FastAPI):
         ml_models["gaji_model"] = joblib.load("gaji_model.pkl")
         logger.info("✅ Model berhasil di load ke memori!, dan Siap melayani request")
     except FileNotFoundError:
-        logger.error("❌ Error: File 'gaji_model.pkl' tidak ditemukan. jalankan train_model.py dulu!")
+        logger.error("❌: Error: File 'gaji_model.pkl' tidak ditemukan. jalankan train_model.py dulu!")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"❌: Error loading model: {e}")
         sys.exit(1)
     yield 
 
@@ -42,7 +45,7 @@ def read_root():
 
 @app.post("/predict", response_model=SalaryOutput)
 def predict_salary(data: SalaryInput):
-    if not ml_models["gaji_model"]:
+    if "gaji_model"not in ml_models or ml_models["gaji_model" is None]:
         logger.critical("Model hilang dari memori runtime!")
         raise HTTPException(status_code=500, detail="Model machine learning tidak aktif")
     try:
