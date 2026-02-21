@@ -26,24 +26,21 @@ def predict_salaries(model, years_list: list[float]) -> dict:
     """
 
     # Konversi format Y.M → desimal
-    converted = []
-    for ym in years_list:
-        decimal_year = convert_ym_to_years(ym)
-        converted.append(decimal_year)
+    converted = [convert_ym_to_years(ym) for ym in years_list]
 
     logger.info(f"Konversi Y.M Selesai: {years_list} -> {converted}")
 
     # np.array(converted)  → array 1D: [2.5, 3.08, 5.0]
     input_array = np.array(converted).reshape(-1, 1)
 
-    # .predict() mengembalikan numpy array: array([4.5, 5.1, 7.2])
+    # model.predict() butuh 2D array dan return numpy array
     raw_predictions = model.predict(input_array)
 
     # Rapihkan hasil
     # Ubah numpy array → list of float biasa (agar bisa di-serialize ke JSON)
     result = [round(float(x), 2) for x in raw_predictions]
 
-    logger.info(f"Prediksi Selesai: {len(result)} data di proses")
+    logger.info(f"Prediksi Selesai: {len(result)} data diproses")
 
     # Return semua data yang dibutuhkan oleh SalaryOutput schema
     return {

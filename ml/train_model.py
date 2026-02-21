@@ -24,13 +24,13 @@ def main():
     print(f"   Rentang pengalaman: {X_train.min()} - {X_train.max()} tahun")
     print(f"   Rentang gaji      : {y_train.min()} - {y_train.max()} juta")
 
-    print("MEMULAI TRAINING....")
+    print("\n🔄 MEMULAI TRAINING....")
 
     # LinearRegression() → buat objek model KOSONG (belum belajar apa-apa)
     model = LinearRegression() 
     model.fit(X_train, y_train)
 
-    print("TRAINING SELESAI")
+    print("✅ TRAINING SELESAI")
 
     y_pred = model.predict(X_train)
 
@@ -52,7 +52,7 @@ def main():
     test_case = [1.0, 3.0, 5.0, 10.0]
     print("\n TES PREDIKSI:")
     for tahun in test_case:
-        hasil = model.predict([[tahun]]) [0]
+        hasil = model.predict([[tahun]])[0]
         print(f"   {tahun:4} tahun pengalaman → prediksi gaji: Rp {hasil:.2f} juta")
 
     # SIMPAN MODEL KE FILE
@@ -62,7 +62,8 @@ def main():
     # joblib.dump() = serialize objek Python → file binary (.pkl)
     output_path = "ml/gaji_model.pkl"
     joblib.dump(model, output_path)
-    print(f"MODEL DISIMPAN KE '{output_path}'. SIAP DIPAKAI DI FASTAPI!")
+    print(f"\n💾 Model disimpan ke '{output_path}'")
+    print("   Jalankan server: python -m uvicorn app.main:app --reload")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,30 @@
+# Virtual environment
 venv/
-/env
+env/
+.venv/
+
+# Environment variables 
 .env
+.env.local
+
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
+# File model ML (bisa di-regenerate dengan train_model.py)
+# Uncomment baris di bawah kalau model terlalu besar untuk di-commit
+# ml/*.pkl
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# Setup notes
 setup_awal.txt

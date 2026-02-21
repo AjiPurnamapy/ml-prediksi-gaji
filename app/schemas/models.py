@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List
+from app.utils.converters import convert_ym_to_years
+
 
 class SalaryInput(BaseModel):
     """
@@ -8,7 +10,7 @@ class SalaryInput(BaseModel):
     """
     years_experience: List[float] = Field(
         ...,
-        examples= [[1.0, 2.5, 3.0, 4.5]],
+        examples= [[1.0, 2.5, 3.11, 4.5]],
         description= ("List pengalaman kerja dalam format Tahun.Bulan (Y.M). "
             "Contoh: 2.6 = 2 tahun 6 bulan, 3.0 = 3 tahun tepat. "
             "PENTING: digit desimal adalah BULAN, bukan pecahan tahun."
@@ -17,7 +19,7 @@ class SalaryInput(BaseModel):
 
     @field_validator("years_experience")
     @classmethod
-    def validate_experience(cls, values):
+    def validate_experience(cls, values: List[float]) -> List[float]:
         """
         Validasi aturan bisnis untuk input pengalaman kerja.
         Kalau ada yang gagal, Pydantic akan kirim HTTP 422 + pesan error ke user.
@@ -30,23 +32,12 @@ class SalaryInput(BaseModel):
             raise ValueError("Maksimal 100 data per request")
         
         for val in values:
-            if val < 0:
-                raise ValueError(
-                    f"Pengalaman tidak boleh negatif: {val}"
-                )
-            
-            months = round((val - int(val)) * 10)
-            if months >= 12:
-                raise ValueError(
-                    f"Format bulan tidak valid pada nilai: {val}"
-                )
-            
-        
+            convert_ym_to_years(val)
             if val > 50:
                 raise ValueError(
                     f"Nilai '{val}' tidak wajar. Maksimal 50 tahun pengalaman"
                 )
-            return values
+        return values
 
 class SalaryOutput(BaseModel):
     """
