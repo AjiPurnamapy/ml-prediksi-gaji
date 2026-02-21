@@ -3,7 +3,7 @@ def convert_ym_to_years(ym: float) -> float:
     Konversi format Y.M (TAHUN.BULAN) ke desimal murni.
     """
     if ym < 0:
-        raise ValueError(f"Pengalaman tidak boleh negatif: '{ym}")
+        raise ValueError(f"Pengalaman tidak boleh negatif: '{ym}'.")
     
     # Parse via string untuk hindari floating point trap
     # str(2.11) → "2.11" → split(".") → ["2", "11"]

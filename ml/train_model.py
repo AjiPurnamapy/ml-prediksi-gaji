@@ -49,9 +49,9 @@ def main():
     print(f"   MAE (rata-rata error)            : {mae:.3f} juta = Rp {mae*1_000_000:,.0f}")
     print(f"   R² Score                         : {r2:.4f} ({r2*100:.1f}% akurasi)")
 
-    test_case = [1.0, 3.0, 5.0, 10.0]
+    test_cases = [1.0, 3.0, 5.0, 10.0]
     print("\n TES PREDIKSI:")
-    for tahun in test_case:
+    for tahun in test_cases:
         hasil = model.predict([[tahun]])[0]
         print(f"   {tahun:4} tahun pengalaman → prediksi gaji: Rp {hasil:.2f} juta")
 

@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     logger.info("🛑 Aplikasi berhenti. Membersihkan resource...")
     ml_models.clear()
 
+APP_VERSION = "1.0.0"
 app = FastAPI(
     title="API prediksi gaji",
     description=(
@@ -41,7 +42,7 @@ app = FastAPI(
         "Menggunakan model Linear Regression yang dilatih dengan data dummy. "
         "Format input: Y.M (Tahun.Bulan), contoh: 2.6 = 2 tahun 6 bulan."
     ),
-    version="1.0.0",
+    version=APP_VERSION,
     lifespan=lifespan
 )
 
@@ -53,12 +54,12 @@ def read_root():
     """
     return {
         "message": "Selamat datang di API Prediksi Gaji",
-        "version": "1.0.0",
+        "version": APP_VERSION,
         "docs": "/docs",
         "health": "/health",
     }
 
-@app.get("/health")
+@app.get("/health", response_model=HealthOutput, tags=["Info"])
 def health_check():
     """
     Endpoint untuk monitoring - cek apakah server dan model dalam kondisi baik.
@@ -68,7 +69,7 @@ def health_check():
     return {
         "status": "ok" if model_loaded else "degraded",
         "model_loaded": model_loaded,
-        "version": "1.0.0",
+        "version": APP_VERSION,
     }
 
 @app.post("/predict", response_model=SalaryOutput, tags=["Prediksi"])

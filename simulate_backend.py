@@ -46,7 +46,7 @@ def hitung_prediksi_gaji(list_pengalaman: list[float]) -> list[float] | None:
             print(f"   {'Input (Y.M)':<15} {'Konversi (thn)':<18} {'Prediksi Gaji'}")
             print(f"   {'-'*50}")
 
-            for i, (input_ym, converted, salary) in enumerate(zip(
+            for _, (input_ym, converted, salary) in enumerate(zip(
                 data["input_years"],
                 data["converted_years_decimal"],
                 data["estimated_salary_million"]

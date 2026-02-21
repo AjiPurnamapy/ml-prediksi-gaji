@@ -9,7 +9,7 @@ def main():
         [60, 3, 1],
         [70, 2, 1],
         [80, 4, 0],
-        [100, 3, 1]
+        [100, 3, 1],
         [150, 5, 0],
         [40, 1, 0], 
         [200, 6, 1]
@@ -34,13 +34,13 @@ def main():
     print(f"Harga fitur garasi : Rp {model.coef_[2]:.2f} Juta")
 
     # tes prediksi
-    sample_rumah = np.array([[300, 5]])
+    sample_rumah = np.array([[300, 5, 1]])
     harga_prediksi = model.predict(sample_rumah)
 
     print(f"\n Prediksi rumah {sample_rumah[0]} (Luas, Kamar): Rp {harga_prediksi[0]:.2f} Juta")
 
     # simpan
-    joblib.dump(model, "house_model.pkl")
+    joblib.dump(model, "ml/house_model.pkl")
     print("Model disimpan sebagai 'house_model.pkl'")
 
 if __name__ == "__main__":

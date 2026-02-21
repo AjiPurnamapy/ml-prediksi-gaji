@@ -15,7 +15,7 @@ __pycache__/
 
 # File model ML (bisa di-regenerate dengan train_model.py)
 # Uncomment baris di bawah kalau model terlalu besar untuk di-commit
-# ml/*.pkl
+ml/*.pkl
 
 # Testing & coverage
 .pytest_cache/
