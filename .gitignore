@@ -13,9 +13,8 @@ __pycache__/
 *.pyo
 *.pyd
 
-# File model ML (bisa di-regenerate dengan train_model.py)
-# Uncomment baris di bawah kalau model terlalu besar untuk di-commit
 ml/*.pkl
+.pkl
 
 # Testing & coverage
 .pytest_cache/
@@ -25,6 +24,3 @@ htmlcov/
 # IDE
 .vscode/
 .idea/
-
-# Setup notes
-setup_awal.txt

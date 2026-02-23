@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List
+from datetime import datetime as dt
 from app.utils.converters import convert_ym_to_years
 
 
@@ -56,3 +57,14 @@ class HealthOutput(BaseModel):
     status: str
     model_loaded: bool
     version: str
+
+class HistoryOutput(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: int
+    input_years: List[float]
+    converted_years: List[float]
+    predicted_salaries: List[float]
+    data_count: int
+    model_version: str
+    created_at: dt

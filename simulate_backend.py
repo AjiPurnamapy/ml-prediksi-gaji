@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     kandidat = {
         "Budi (fresh graduate)": 0.6,       # 0 tahun 6 bulan
-        "Sari (junior)": 2.3,               # 2 tahun 3 bulan
+        "Sari (junior)": 2.5,               # 2 tahun 3 bulan
         "Andi (mid-level)": 4.0,            # 4 tahun tepat
         "Dewi (senior)": 7.6,               # 7 tahun 6 bulan
         "Pak Budi (principal)": 12.0,       # 12 tahun
@@ -145,7 +145,6 @@ if __name__ == "__main__":
             print(f"   {nama:<30} {pengalaman} thn         Rp {gaji:.1f} juta")
 
         print("\n✅ Data siap untuk disimpan ke database PostgreSQL!")
-        print("   (Fitur ini akan kita tambahkan di Fase 2)")
 
     # Step 3: Demo error handling
     demo_validasi_error()
