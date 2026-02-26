@@ -1,8 +1,7 @@
 import math
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func, cast, String
-from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
+from sqlalchemy import select, desc, func
 from app.db.models import PredictionHistory
 
 async def save_prediction(session: AsyncSession, prediction_result: dict, model_version: str) -> PredictionHistory:

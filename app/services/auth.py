@@ -2,9 +2,10 @@
 app/services/auth.py — Service autentikasi JWT
 
 Berisi:
-- Hashing & verifikasi password (bcrypt via passlib)
+- Hashing & verifikasi password (bcrypt langsung)
 - Generate & decode JWT token
 - Dependency `get_current_user` untuk melindungi endpoint
+- Dependency `require_admin_role` untuk endpoint admin-only
 """
 
 import os
@@ -84,3 +85,17 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+async def require_admin_role(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Dependency: hanya mengizinkan user dengan role 'admin'.
+    Dipakai untuk endpoint sensitif seperti /admin/retrain.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses ditolak. Endpoint ini hanya untuk admin.",
+        )
+    return current_user

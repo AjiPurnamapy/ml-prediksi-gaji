@@ -12,8 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from fastapi_cache import FastAPICache
+from fastapi_cache.decorator import cache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from redis import asyncio as aioredis
 
 from app.schemas.models import (
     SalaryInputV2, SalaryOutputV2, HealthOutput, HistoryOutput,
@@ -22,10 +26,12 @@ from app.schemas.models import (
 from app.services.predictor import predict_salaries_v2
 from app.services.history import save_prediction, get_all_history, get_history_by_id, update_actual_salaries
 from app.services.auth import (
-    hash_password, verify_password, create_access_token, get_current_user,
+    hash_password, verify_password, create_access_token,
+    get_current_user, require_admin_role,
 )
 from app.db.database import get_db, engine, Base
 from app.db.models import User
+from ml.auto_retrain import retrain_model
 
 
 logging.basicConfig(
@@ -36,7 +42,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ml_models = {}
-APP_VERSION = "4.0.0"
+APP_VERSION = "5.0.0"
 MODEL_VERSION = "salary-linear-v2"
 
 # --- Sentry (Error Tracking) ---
@@ -74,6 +80,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Error loading model: {e}")
         sys.exit(1)
+
+    # Inisialisasi Redis Cache
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+    try:
+        redis_client = aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+        await redis_client.ping()
+        FastAPICache.init(RedisBackend(redis_client), prefix="salary-api-cache")
+        logger.info(f"✅ Redis cache aktif! ({REDIS_URL})")
+    except Exception as redis_err:
+        logger.warning(f"⚠️  Redis tidak tersedia ({redis_err}). Menggunakan in-memory cache.")
+        FastAPICache.init(InMemoryBackend(), prefix="salary-api-cache")
+
     yield 
 
     # Shutdown
@@ -242,7 +260,9 @@ async def predict_salary(
 # =====================================
 
 @app.get("/history", response_model=PaginatedHistoryOutput, tags=["History"])
+@cache(expire=30)
 async def get_history(
+    request: Request,
     page: int = 1,
     size: int = 10,
     city: str | None = None,
@@ -317,3 +337,33 @@ async def submit_feedback(
         return record
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+# =====================================
+#   ADMIN ENDPOINTS (Khusus Admin)
+# =====================================
+
+@app.post("/admin/retrain", tags=["Admin"])
+async def trigger_retrain(
+    current_user: User = Depends(require_admin_role),
+):
+    """
+    Trigger retraining model AI menggunakan data feedback (actual_salaries).
+    **Khusus admin** — user biasa akan mendapat 403 Forbidden.
+
+    Proses:
+    1. Ambil semua histori yang memiliki feedback gaji aktual
+    2. Latih model V3 (Ridge + Log transform)
+    3. Bandingkan MAE dengan model V2
+    4. Simpan model V3 hanya jika lebih akurat
+    """
+    logger.info(f"🔧 Admin '{current_user.username}' memicu retraining model")
+
+    try:
+        result = await retrain_model()
+        return result
+    except Exception as e:
+        logger.error(f"❌ Retraining gagal: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Retraining gagal: {str(e)}"
+        )
