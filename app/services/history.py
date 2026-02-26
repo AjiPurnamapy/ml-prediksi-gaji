@@ -1,7 +1,8 @@
 import math
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, cast, String
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from app.db.models import PredictionHistory
 
 async def save_prediction(session: AsyncSession, prediction_result: dict, model_version: str) -> PredictionHistory:
@@ -29,26 +30,48 @@ async def get_all_history(
     session: AsyncSession,
     page: int = 1,
     size: int = 10,
+    filter_city: str | None = None,
+    filter_level: str | None = None,
 ) -> dict:
     """
-    Ambil riwayat prediksi dengan paginasi.
+    Ambil riwayat prediksi dengan paginasi dan filter opsional.
 
     Args:
-        session : Sesi database async
-        page    : Nomor halaman (mulai dari 1)
-        size    : Jumlah item per halaman
+        session      : Sesi database async
+        page         : Nomor halaman (mulai dari 1)
+        size         : Jumlah item per halaman
+        filter_city  : (Opsional) Filter berdasarkan kota (cari di dalam array)
+        filter_level : (Opsional) Filter berdasarkan level jabatan
 
     Returns:
         dict berisi metadata paginasi dan list items
     """
-    # Hitung total data
+    # Base query conditions
+    conditions = []
+
+    if filter_city:
+        # Cari row yang array 'city' mengandung nilai filter_city
+        conditions.append(
+            PredictionHistory.city.any(filter_city.lower())
+        )
+
+    if filter_level:
+        # Cari row yang array 'job_level' mengandung nilai filter_level
+        conditions.append(
+            PredictionHistory.job_level.any(filter_level.lower())
+        )
+
+    # Hitung total data (dengan filter)
     count_query = select(func.count(PredictionHistory.id))
+    for cond in conditions:
+        count_query = count_query.where(cond)
+
     total_result = await session.execute(count_query)
     total_data = total_result.scalar_one()
 
     total_pages = max(1, math.ceil(total_data / size))
 
-    # Ambil data sesuai halaman
+    # Ambil data sesuai halaman (dengan filter)
     offset = (page - 1) * size
     data_query = (
         select(PredictionHistory)
@@ -56,6 +79,9 @@ async def get_all_history(
         .offset(offset)
         .limit(size)
     )
+    for cond in conditions:
+        data_query = data_query.where(cond)
+
     result = await session.execute(data_query)
     items = result.scalars().all()
 
@@ -72,3 +98,35 @@ async def get_history_by_id(session: AsyncSession, history_id: int) -> Predictio
         select(PredictionHistory).where(PredictionHistory.id == history_id)
     )
     return result.scalar_one_or_none()
+
+async def update_actual_salaries(
+    session: AsyncSession,
+    history_id: int,
+    actual_salaries: list[float],
+) -> PredictionHistory:
+    """
+    Update gaji aktual (feedback) untuk sebuah record prediksi.
+
+    Validasi:
+    - Record harus ada
+    - Panjang actual_salaries harus sama dengan data_count
+
+    Returns:
+        Record yang sudah diupdate
+    """
+    record = await get_history_by_id(session, history_id)
+
+    if record is None:
+        raise ValueError(f"History dengan ID {history_id} tidak ditemukan")
+
+    if len(actual_salaries) != record.data_count:
+        raise ValueError(
+            f"Jumlah gaji aktual ({len(actual_salaries)}) harus sama dengan "
+            f"jumlah data prediksi ({record.data_count})"
+        )
+
+    record.actual_salaries = actual_salaries
+    await session.commit()
+    await session.refresh(record)
+
+    return record

@@ -22,6 +22,9 @@ class PredictionHistory(Base):
     job_level : Mapped[List[str]] = mapped_column(ARRAY(String), nullable=True)
     predicted_salaries : Mapped[List[float]] = mapped_column(ARRAY(Float), nullable=False)
 
+    # Feedback Loop: gaji aktual yang disepakati saat kontrak (diisi oleh HR setelah proses hiring)
+    actual_salaries : Mapped[List[float] | None] = mapped_column(ARRAY(Float), nullable=True)
+
     # Jumlah data dalam satu request — berguna untuk filtering
     data_count : Mapped[int] = mapped_column(Integer, nullable=False)
 

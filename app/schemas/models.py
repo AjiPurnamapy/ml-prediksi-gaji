@@ -139,6 +139,7 @@ class HistoryOutput(BaseModel):
     city: List[str] | None = None
     job_level: List[str] | None = None
     predicted_salaries: List[float]
+    actual_salaries: Optional[List[float]] = None
     data_count: int
     model_version: str
     created_at: dt
@@ -151,6 +152,25 @@ class PaginatedHistoryOutput(BaseModel):
     current_page: int
     page_size: int
     items: List[HistoryOutput]
+
+
+class FeedbackInput(BaseModel):
+    """Schema untuk mengirimkan gaji aktual (feedback) ke prediksi yang sudah tersimpan."""
+    actual_salaries: List[float] = Field(
+        ...,
+        examples=[[4.5, 5.0, 8.0]],
+        description="List gaji aktual (juta Rp) yang akhirnya disepakati saat kontrak."
+    )
+
+    @field_validator("actual_salaries")
+    @classmethod
+    def validate_salaries(cls, values: List[float]) -> List[float]:
+        if not values:
+            raise ValueError("List gaji aktual tidak boleh kosong")
+        for val in values:
+            if val <= 0:
+                raise ValueError(f"Gaji aktual harus positif, dapat: {val}")
+        return values
 
 
 # --- Auth Schemas ---

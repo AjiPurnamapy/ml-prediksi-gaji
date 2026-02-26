@@ -1,6 +1,8 @@
 import joblib
 import logging
+import os
 import sys
+import sentry_sdk
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Request
@@ -15,10 +17,10 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.schemas.models import (
     SalaryInputV2, SalaryOutputV2, HealthOutput, HistoryOutput,
-    PaginatedHistoryOutput, UserCreate, UserResponse, Token,
+    PaginatedHistoryOutput, UserCreate, UserResponse, Token, FeedbackInput,
 )
 from app.services.predictor import predict_salaries_v2
-from app.services.history import save_prediction, get_all_history, get_history_by_id
+from app.services.history import save_prediction, get_all_history, get_history_by_id, update_actual_salaries
 from app.services.auth import (
     hash_password, verify_password, create_access_token, get_current_user,
 )
@@ -34,8 +36,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ml_models = {}
-APP_VERSION = "3.0.0"
+APP_VERSION = "4.0.0"
 MODEL_VERSION = "salary-linear-v2"
+
+# --- Sentry (Error Tracking) ---
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=0.3,
+        environment=os.getenv("APP_ENV", "development"),
+        release=f"salary-api@{APP_VERSION}",
+    )
+    logging.getLogger(__name__).info("✅ Sentry error tracking aktif!")
+else:
+    logging.getLogger(__name__).info("ℹ️  SENTRY_DSN tidak diset — error tracking nonaktif.")
 
 # --- Rate Limiter ---
 limiter = Limiter(key_func=get_remote_address)
@@ -230,22 +245,29 @@ async def predict_salary(
 async def get_history(
     page: int = 1,
     size: int = 10,
+    city: str | None = None,
+    job_level: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Ambil riwayat prediksi dengan paginasi.
+    Ambil riwayat prediksi dengan paginasi dan filter opsional.
     **Memerlukan JWT token**.
 
     - **page**: Nomor halaman (mulai dari 1)
     - **size**: Jumlah item per halaman (default 10, maks 100)
+    - **city**: (Opsional) Filter berdasarkan kota, contoh: `?city=jakarta`
+    - **job_level**: (Opsional) Filter berdasarkan level, contoh: `?job_level=senior`
     """
     if page < 1:
         raise HTTPException(status_code=422, detail="Parameter 'page' harus >= 1")
     if size < 1 or size > 100:
         raise HTTPException(status_code=422, detail="Parameter 'size' harus antara 1-100")
 
-    result = await get_all_history(db, page=page, size=size)
+    result = await get_all_history(
+        db, page=page, size=size,
+        filter_city=city, filter_level=job_level,
+    )
     return result
 
 @app.get("/history/{history_id}", response_model=HistoryOutput, tags=["History"])
@@ -266,3 +288,32 @@ async def get_history_detail(
             detail=f"History dengan ID {history_id} tidak ditemukan!"
         )
     return record
+
+# =====================================
+#   FEEDBACK ENDPOINT (Dilindungi JWT)
+# =====================================
+
+@app.put("/history/{history_id}/feedback", response_model=HistoryOutput, tags=["History"])
+async def submit_feedback(
+    history_id: int,
+    data: FeedbackInput,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Submit gaji aktual (feedback) untuk sebuah prediksi yang sudah tersimpan.
+    **Memerlukan JWT token**.
+
+    Berguna untuk Active Learning — mengukur akurasi model AI
+    terhadap gaji yang sesungguhnya disepakati.
+    """
+    try:
+        record = await update_actual_salaries(
+            session=db,
+            history_id=history_id,
+            actual_salaries=data.actual_salaries,
+        )
+        logger.info(f"📝 Feedback diterima untuk history #{history_id} oleh {current_user.username}")
+        return record
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
